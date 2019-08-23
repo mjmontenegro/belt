@@ -1,0 +1,21 @@
+@model Auction
+
+
+<h1>Product: @Model.ProductName</h1>
+<h3>Created by: @Model.Creator.FirstName</h3>
+<h3>Time Remaining: @((int)(Model.Date - DateTime.Now).TotalDays) days</h3>
+<h6>Description:</h6>
+<h6>@Model.Description</h6>
+<h4>Current Highest Bid:</h4>
+<h4>$@Model.HighBid.ToString("0.00")</h4>
+<h4>By: @Model.HighBidder.FullName</h4>
+
+    <form asp-action="Bid" asp-controller="Home" method="post">
+        <div class="form-group">
+            <label for="Amount"></label>
+            <input type="text" name="Amount" placeholder="Your bid goes here...">
+            <p></p><span name="bidValidation">@ViewBag.Error</span>
+        </div>
+            <input name="AuctionId" type="hidden" value="@Model.AuctionId">
+            <input  class="btn btn-danger"value="Bid!" type="submit">
+    </form>

@@ -1,0 +1,28 @@
+@model Auction
+
+<h1>Create a new Auction</h1>
+
+    <form asp-action="CreateAuction" asp-controller="Home" method="post">
+        <div class="form-group">
+            <label asp-for="ProductName"></label>
+            <input asp-for="ProductName">
+            <p></p><span asp-validation-for="ProductName"></span>
+        </div>
+        <div class="form-group">
+            <label asp-for="Description"></label>
+            <input asp-for="Description">
+            <p></p><span asp-validation-for="Description"></span>
+        <div class="form-group">
+            <label asp-for="HighBid"></label>
+            <input asp-for="HighBid">
+            <p></p><span asp-validation-for="HighBid"></span>
+        </div>
+        <div class="form-group">
+            <label asp-for="Date"></label>
+            <input type="date" asp-for="Date">
+            <p></p><span asp-validation-for="Date"></span>
+        </div>
+            <input asp-for="CreatorId" type="hidden" value="@ViewBag.UserId">
+            <input asp-for="HighBidderId" type="hidden" value="@ViewBag.UserId">
+            <input  value="Create Auction" type="submit">
+    </form>

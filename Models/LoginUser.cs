@@ -8,8 +8,8 @@ namespace belt.Models
         {
             [EmailAddress]
             [Required]
-            [Display(Name = "Email")]
-            public string LoginEmail {get;set;}
+            [Display(Name = "Username")]
+            public string LoginUsername {get;set;}
             [DataType(DataType.Password)]
             [Required]
             [Display(Name = "Password")]

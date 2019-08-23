@@ -31,37 +31,43 @@ namespace belt.Models
             }
         }
 
-        public class Wedding
+        public class Auction
         {
             [Key]
             [Column("id")]
-            public int WeddingId {get;set;}
+            public int AuctionId {get;set;}
 
             [Required]
-            [Display(Name = "Wedder One")]
-            [Column("wedder_one", TypeName="VARCHAR(45)")]
-            public string WedderOne {get;set;}
+            [Display(Name = "Product Name")]
+            [MinLength(4, ErrorMessage="Product name must be greater than 3 in length")]
+            // [Column("product_name", TypeName="VARCHAR(255)")]
+            public string ProductName {get;set;}
 
             [Required]
-            [Display(Name = "Wedder Two")]
-            [Column("wedder_two", TypeName="VARCHAR(45)")]
-            public string WedderTwo {get;set;}
+            [MinLength(11, ErrorMessage="Product description must be greater than 10 in length")]
+            [Display(Name = "Description")]
+            // [Column("description", TypeName="VARCHAR(255)")]
+            public string Description {get;set;}
 
             [Required]
-            [Display(Name = "Wedding Address")]
-            [Column("address", TypeName="VARCHAR(45)")]
-            public string Address {get;set;}
+            [Display(Name = "Starting Bid")]
+            [Range(0.0,100000000.0, ErrorMessage="Starting bid must be greater than zero")]
+            // [Column("address", TypeName="VARCHAR(45)")]
+            public double HighBid {get;set;}
 
             [Required]
-            // [NoUnder13]
-            [Display(Name = "Date")]
+            [NoPastDates]
+            [Display(Name = "End Date")]
             [DataType(DataType.DateTime)]
             public DateTime Date {get;set;}
 
-            [Required]
-            public int UserId {get;set;}
-            
-            //Navigation Properties
-            public List<RSVP> Attendees {get;set;}
+            // [Required]
+            public int CreatorId {get;set;}
+            public User Creator {get;set;}
+
+            // [Required]
+            public int HighBidderId {get;set;}
+            public User HighBidder {get;set;}
+
         }
     }

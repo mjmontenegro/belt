@@ -23,7 +23,6 @@ namespace belt.Controllers
         [HttpGet("")]        
         public IActionResult Index()
         {
-            // List<User> myUsers = dbContext.Users.ToList();
             return View("Index");
         }
 
@@ -31,29 +30,30 @@ namespace belt.Controllers
         {
             return View();
         }
-        [HttpGet("/user/new")]
-        public IActionResult NewUser()
-        {
-            return View("NewUser");
-        }
+        // [HttpGet("/user/new")]
+        // public IActionResult NewUser()
+        // {
+        //     return View("NewUser");
+        // }
         [HttpPost("user/create")]
         public IActionResult CreateUser(User newUser)
         {
             if(ModelState.IsValid)
             {
-                if(!dbContext.Users.Any(u => u.Email == newUser.Email))
+                if(!dbContext.Users.Any(u => u.Username == newUser.Username))
                 {
                     PasswordHasher<User> Hasher = new PasswordHasher<User>();
                     newUser.Password = Hasher.HashPassword(newUser, newUser.Password);
+                    newUser.Wallet = 1000;
                     dbContext.Add(newUser);
                     dbContext.SaveChanges();
-                    User userInDb = dbContext.Users.FirstOrDefault(u => u.Email == newUser.Email);
+                    User userInDb = dbContext.Users.FirstOrDefault(u => u.Username == newUser.Username);
                     HttpContext.Session.SetInt32("UserId", userInDb.UserId);
                     return RedirectToAction("Dashboard");
                 }
                 else
                 {
-                    ModelState.AddModelError("Email", "Email is already in use!");
+                    ModelState.AddModelError("Username", "Password is already in use!");
                 }
             }
             return View("Index");
@@ -62,7 +62,7 @@ namespace belt.Controllers
         {
             if(ModelState.IsValid)
             {
-                var userInDb = dbContext.Users.FirstOrDefault(u => u.Email == userSubmission.LoginEmail);
+                var userInDb = dbContext.Users.FirstOrDefault(u => u.Username == userSubmission.LoginUsername);
                 if( userInDb != null)
                 {
                     var hasher = new PasswordHasher<LoginUser>();
@@ -74,7 +74,7 @@ namespace belt.Controllers
                         return RedirectToAction("Dashboard");
                     }
                 }
-                ModelState.AddModelError("LoginEmail", "Invalid Email/Password");
+                ModelState.AddModelError("LoginUsername", "Invalid Username/Password");
             }
             return View("Index");
         }
@@ -88,11 +88,24 @@ namespace belt.Controllers
             }
             ViewBag.Name = dbContext.Users.FirstOrDefault(u => u.UserId == userId).FirstName;
             ViewBag.UserId = dbContext.Users.FirstOrDefault(u => u.UserId == userId).UserId;
-            List<Wedding> weddingsWithAttendees = dbContext.Weddings.Include(w => w.Attendees).ToList();
-            return View("Dashboard", weddingsWithAttendees);
+            ViewBag.Wallet = dbContext.Users.FirstOrDefault(u => u.UserId == userId).Wallet;
+            List<Auction> AllAuctions = dbContext.Auctions.Include(a => a.Creator).Include( a => a.HighBidder).OrderBy(a => a.Date).ToList();
+            foreach(Auction auction in AllAuctions)
+            {
+                if(auction.Date < DateTime.Now)
+                {
+                    //Auction has expired and money needs to be transferred and auction removed
+                    User seller = auction.Creator;
+                    User buyer = auction.HighBidder;
+                    seller.Wallet += auction.HighBid;
+                    buyer.Wallet -= auction.HighBid;
+                    dbContext.Auctions.Remove(auction);
+                }
+            }
+            return View("Dashboard", AllAuctions);
         }
-        [HttpGet("wedding/new")]
-        public IActionResult NewWedding()
+        [HttpGet("auction/new")]
+        public IActionResult NewAuction()
         {
             int? userId = HttpContext.Session.GetInt32("UserId");
             if (userId == null)
@@ -101,59 +114,99 @@ namespace belt.Controllers
             }
             ViewBag.Name = dbContext.Users.FirstOrDefault(u => u.UserId == userId).FirstName;
             ViewBag.UserId = dbContext.Users.FirstOrDefault(u => u.UserId == userId).UserId;
-            return View("NewWedding");
+            return View("NewAuction");
         }
-        [HttpPost("wedding/create")]
-        public IActionResult CreateWedding(Wedding newWedding)
+        [HttpPost("auction/create")]
+        public IActionResult CreateAuction(Auction newAuction)
         {
+            int? userId = HttpContext.Session.GetInt32("UserId");
+            if (userId == null)
+            {
+                return RedirectToAction("Index");
+            }
             if(ModelState.IsValid)
             {
-                dbContext.Weddings.Add(newWedding);
+                dbContext.Auctions.Add(newAuction);
                 dbContext.SaveChanges();
                 return RedirectToAction("Dashboard");
             }
+            ViewBag.Name = dbContext.Users.FirstOrDefault(u => u.UserId == userId).FirstName;
+            ViewBag.UserId = dbContext.Users.FirstOrDefault(u => u.UserId == userId).UserId;
+
+            return View("NewAuction");
+        }
+
+        [HttpGet("auction/details/{AuctionId}")]
+        public IActionResult details(int AuctionId)
+        {
             int? userId = HttpContext.Session.GetInt32("UserId");
             if (userId == null)
             {
                 return RedirectToAction("Index");
             }
-            ViewBag.Name = dbContext.Users.FirstOrDefault(u => u.UserId == userId).FirstName;
-            ViewBag.UserId = dbContext.Users.FirstOrDefault(u => u.UserId == userId).UserId;
-
-            return View("NewWedding");
+            Auction auctionToView = dbContext.Auctions.Include(a => a.Creator)
+            .Include(a => a.HighBidder).FirstOrDefault(a => a.AuctionId == AuctionId);
+            ViewBag.Error = "";
+            return View("Details", auctionToView);
         }
-
-        [HttpGet("wedding/join/{weddingId}")]
-        public IActionResult Join(int weddingId)
+        [HttpPost("auction/bid")]
+        public IActionResult Bid(double Amount, int AuctionId)
         {
-            // Add to DB
-            RSVP myRSVP = new RSVP();
-            myRSVP.UserId = (int)HttpContext.Session.GetInt32("UserId");
-            myRSVP.WeddingId = weddingId;
-            dbContext.RSVPs.Add(myRSVP);
-            dbContext.SaveChanges();
-            return RedirectToAction("Dashboard");
-        }
-        [HttpGet("wedding/leave/{weddingId}")]
-        public IActionResult Leave(int weddingId)
-        {
-            int userId = (int)HttpContext.Session.GetInt32("UserId");
-            RSVP resv = dbContext.RSVPs.FirstOrDefault(r => r.UserId == userId && r.WeddingId == weddingId);
-            dbContext.RSVPs.Remove(resv);
-            dbContext.SaveChanges();
-            return RedirectToAction("Dashboard");
-        }
-        [HttpGet("wedding/delete/{weddingId}")]
-        public IActionResult Delete(int weddingId)
-        {
-            int userId = (int)HttpContext.Session.GetInt32("UserId");
-            Wedding weddingToDelete = dbContext.Weddings.FirstOrDefault(w => w.WeddingId == weddingId);
-            if(weddingToDelete.UserId == userId)
+            int? userId = HttpContext.Session.GetInt32("UserId");
+            if (userId == null)
             {
-                dbContext.Weddings.Remove(weddingToDelete);
+                return RedirectToAction("Index");
+            }
+            
+            double highBid = dbContext.Auctions.Include(a => a.Creator).Include(a => a.HighBidder).FirstOrDefault(a => a.AuctionId == AuctionId).HighBid;
+            double wallet = dbContext.Users.FirstOrDefault(u => u.UserId == userId).Wallet;
+            if( Amount > wallet || Amount < highBid)
+            {
+                Auction auctionToView = dbContext.Auctions.Include(a => a.Creator)
+                .Include(a => a.HighBidder).FirstOrDefault(a => a.AuctionId == AuctionId);
+                ViewBag.Error = "Please enter an amount greater than the minium bid but less than the amount in your wallet";
+                return View("Details", auctionToView);
+            }
+            else
+            {
+                // update highest bid
+                // Add to DB
+                // RSVP myRSVP = new RSVP();
+                // myRSVP.UserId = (int)HttpContext.Session.GetInt32("UserId");
+                // myRSVP.WeddingId = weddingId;
+                // dbContext.RSVPs.Add(myRSVP);
+                // dbContext.SaveChanges();
+                User highestBidder = dbContext.Users.FirstOrDefault(u => u.UserId == (int)userId);
+                highestBidder.Wallet -= Amount;
+                Auction auctionToUpdate = dbContext.Auctions.FirstOrDefault(a => a.AuctionId == AuctionId);
+                auctionToUpdate.HighBidderId = (int)userId;
+                auctionToUpdate.HighBid = Amount;
+                dbContext.SaveChanges();
+
+            }
+            return RedirectToAction("Dashboard");
+        }
+        [HttpGet("auction/delete/{auctionId}")]
+        public IActionResult Delete(int auctionId)
+        {
+            int? userId = HttpContext.Session.GetInt32("UserId");
+            if (userId == null)
+            {
+                return RedirectToAction("Index");
+            }
+            Auction auctionToDelete = dbContext.Auctions.FirstOrDefault(w => w.AuctionId == auctionId);
+            if(auctionToDelete.CreatorId == userId)
+            {
+                dbContext.Auctions.Remove(auctionToDelete);
                 dbContext.SaveChanges();
             }
             return RedirectToAction("Dashboard");
+        }
+        [HttpGet("logout")]
+        public IActionResult Logout()
+        {
+            HttpContext.Session.Clear();
+            return RedirectToAction("Index");
         }
 
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]

@@ -14,10 +14,11 @@ namespace belt.Migrations
                 {
                     id = table.Column<int>(nullable: false)
                         .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
+                    username = table.Column<string>(type: "VARCHAR(255)", nullable: false),
                     first_name = table.Column<string>(type: "VARCHAR(45)", nullable: false),
                     last_name = table.Column<string>(type: "VARCHAR(45)", nullable: false),
-                    email = table.Column<string>(type: "VARCHAR(45)", nullable: false),
                     password = table.Column<string>(type: "VARCHAR(255)", nullable: false),
+                    Wallet = table.Column<double>(nullable: false),
                     created_at = table.Column<DateTime>(nullable: false),
                     updated_at = table.Column<DateTime>(nullable: false)
                 },
@@ -27,69 +28,53 @@ namespace belt.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "Weddings",
+                name: "Auctions",
                 columns: table => new
                 {
                     id = table.Column<int>(nullable: false)
                         .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
-                    wedder_one = table.Column<string>(type: "VARCHAR(45)", nullable: false),
-                    wedder_two = table.Column<string>(type: "VARCHAR(45)", nullable: false),
-                    address = table.Column<string>(type: "VARCHAR(45)", nullable: false),
+                    ProductName = table.Column<string>(nullable: false),
+                    Description = table.Column<string>(nullable: false),
+                    HighBid = table.Column<double>(nullable: false),
                     Date = table.Column<DateTime>(nullable: false),
-                    UserId = table.Column<int>(nullable: false)
+                    CreatorId = table.Column<int>(nullable: false),
+                    HighBidderId = table.Column<int>(nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Weddings", x => x.id);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "RSVPs",
-                columns: table => new
-                {
-                    RSVPId = table.Column<int>(nullable: false)
-                        .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
-                    UserId = table.Column<int>(nullable: false),
-                    WeddingId = table.Column<int>(nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_RSVPs", x => x.RSVPId);
+                    table.PrimaryKey("PK_Auctions", x => x.id);
                     table.ForeignKey(
-                        name: "FK_RSVPs_Users_UserId",
-                        column: x => x.UserId,
+                        name: "FK_Auctions_Users_CreatorId",
+                        column: x => x.CreatorId,
                         principalTable: "Users",
                         principalColumn: "id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
-                        name: "FK_RSVPs_Weddings_WeddingId",
-                        column: x => x.WeddingId,
-                        principalTable: "Weddings",
+                        name: "FK_Auctions_Users_HighBidderId",
+                        column: x => x.HighBidderId,
+                        principalTable: "Users",
                         principalColumn: "id",
                         onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateIndex(
-                name: "IX_RSVPs_UserId",
-                table: "RSVPs",
-                column: "UserId");
+                name: "IX_Auctions_CreatorId",
+                table: "Auctions",
+                column: "CreatorId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_RSVPs_WeddingId",
-                table: "RSVPs",
-                column: "WeddingId");
+                name: "IX_Auctions_HighBidderId",
+                table: "Auctions",
+                column: "HighBidderId");
         }
 
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
-                name: "RSVPs");
+                name: "Auctions");
 
             migrationBuilder.DropTable(
                 name: "Users");
-
-            migrationBuilder.DropTable(
-                name: "Weddings");
         }
     }
 }

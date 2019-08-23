@@ -1,51 +1,39 @@
-@model List<Wedding>
+@model List<Auction>
 
-<a asp-action="NewWedding">New Wedding</a>
+<h1>Hi @ViewBag.Name! Here are the current auctions:</h1>
 
-<h1>Here are the current weddings</h1>
-
+<div>
 <table class="table table-striped">
   <thead class="thead-dark">
     <tr>
-      <th scope="col">Wedding</th>
-      <th scope="col">Date</th>
-      <th scope="col">Guests</th>
-      <th scope="col">Action</th>
+      <th scope="col">Product</th>
+      <th scope="col">Seller</th>
+      <th scope="col">Top Bid</th>
+      <th scope="col">Time Remaining</th>
+      <th scope="col">Manage</th>
     </tr>
   </thead>
   <tbody>
 
-@foreach(Wedding wedding in Model)
+@foreach(Auction auction in Model)
 {
     <tr>
-        <td>@wedding.WedderOne & @wedding.WedderTwo</td>
-        <td>@wedding.Date.ToString("MMMM d, yyyy")</td>
-        <td>@wedding.Attendees.Count</td>
-        <td>@if(wedding.UserId == ViewBag.UserId)
-            {
-                <a asp-action="Delete" asp-route-weddingId=@wedding.WeddingId>Delete</a>
-            }
-            else
-            {
-                @if(wedding.Attendees.Any(a => a.UserId == ViewBag.UserId))
-                {
-                    <a asp-action="Leave" asp-route-weddingId=@wedding.WeddingId>Un-RSVP</a>
-                }
-                else
-                {       
-                    <a asp-action="Join" asp-route-weddingId=@wedding.WeddingId>RSVP</a>
-                }
-            }
-            
-            
-            
-
+        <td><a asp-action="Details" asp-route-auctionId=@auction.AuctionId>@auction.ProductName</a></td>
+        <td>@auction.Creator.FirstName</td>
+        <td>@auction.HighBid</td>
+        <td>@((int)(auction.Date - DateTime.Now).TotalDays) Days</td>
+        <td>@if(auction.CreatorId == ViewBag.UserId)
+          {
+            <a asp-action="Delete" asp-route-auctionId=@auction.AuctionId>Delete</a>
+          }
         </td>
     </tr>
 }
-
-
-
-
   </tbody>
 </table>
+</div>
+<div>
+<h4>Your Current Wallet: $@ViewBag.Wallet.ToString("0.00")</h4>
+</div>
+<a class="btn btn-primary" asp-controller="Home" asp-action="NewAuction">New Auction</a>
+
